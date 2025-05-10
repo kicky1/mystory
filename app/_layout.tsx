@@ -1,29 +1,43 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { store } from '@/store';
+import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Provider } from 'react-redux';
+import { ThemeProvider } from '../context/ThemeContext';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  // Add state to manage when it's safe to render protected content
+  const [isReady, setIsReady] = useState(false);
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  // Use effect to ensure layout is mounted before attempting authentication logic
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Provider store={store}>
+      <ThemeProvider>
+        <StatusBar style="auto" />
+        <View style={styles.container}>
+          {isReady ? (
+            <ProtectedRoute>
+              <Slot />
+            </ProtectedRoute>
+          ) : (
+            // Render an empty Slot during initial mount to ensure layout is available
+            <Slot />
+          )}
+        </View>
+      </ThemeProvider>
+    </Provider>
   );
 }
+
+// Define styles outside the component using StyleSheet
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  }
+});
