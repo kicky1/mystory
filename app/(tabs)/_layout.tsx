@@ -21,7 +21,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#23262F',
+        tabBarActiveTintColor: '#e74c3c',
         tabBarInactiveTintColor: '#A6A6A6',
         tabBarStyle: {
           backgroundColor: '#fff',
@@ -29,7 +29,6 @@ export default function TabLayout() {
           borderTopColor: '#F0F0F0',
           height: 70,
           paddingBottom: 16,
-          paddingTop: 4,
           elevation: 0,
           shadowOpacity: 0,
         },
@@ -42,16 +41,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'Polecane',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="flash" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="create-story"
         options={{
-          title: 'Create',
+          title: 'Dodaj',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
@@ -60,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Profil',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

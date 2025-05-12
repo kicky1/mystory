@@ -11,12 +11,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const MENU_ITEMS = [
   {
     icon: 'person-outline',
-    label: 'My Account',
+    label: 'Moje konto',
     onPress: () => router.push('/my-account'),
   },
   {
     icon: 'heart-outline',
-    label: 'Your Favorites',
+    label: 'Ulubione',
     onPress: () => router.push('/favorites'),
   },
 ];
@@ -25,7 +25,7 @@ export default function ProfileScreen() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
 
   function handleLogout() {
     Alert.alert(
@@ -46,13 +46,22 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea]} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
-        <ThemedText style={styles.headerTitle}>Profile</ThemedText>
+        <View style={styles.header}>
+          <View style={styles.headerTitleContainer}>
+            <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Profil użytkownika</ThemedText>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#23262F'} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* User Info Row */}
-        <View style={styles.userRow}>
+        <View style={[styles.userRow, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
           <View style={styles.avatarWrapper}>
             {/* Replace with user.avatar if available */}
             <Image
@@ -62,26 +71,34 @@ export default function ProfileScreen() {
             />
           </View>
           <View style={styles.userInfo}>
-            <ThemedText style={styles.userName}>{user?.username || 'John Doe'}</ThemedText>
-            <ThemedText style={styles.userContact}>{user?.email || '(+1) 234 567 890'}</ThemedText>
+            <ThemedText style={[styles.userName, { color: isDark ? '#fff' : '#23262F' }]}>{user?.username || 'John Doe'}</ThemedText>
+            <ThemedText style={[styles.userContact, { color: isDark ? '#A6A6A6' : '#666' }]}>{user?.email || '(+1) 234 567 890'}</ThemedText>
           </View>
           <TouchableOpacity onPress={handleLogout} accessibilityRole="button">
-            <ThemedText style={styles.logoutText}>Logout</ThemedText>
+            <ThemedText style={styles.logoutText}>Wyloguj</ThemedText>
           </TouchableOpacity>
         </View>
 
         {/* Menu List */}
-        <View style={styles.menuList}>
+        <View style={[styles.menuList]}>
           {MENU_ITEMS.map((item, idx) => (
             <TouchableOpacity
               key={item.label}
-              style={styles.menuItem}
+              style={[styles.menuItem, { 
+                backgroundColor: isDark ? '#23262F' : '#fff',
+                borderBottomColor: isDark ? '#2A2D36' : '#F0F0F0'
+              }]}
               onPress={item.onPress}
               accessibilityRole="button"
             >
-              <Ionicons name={item.icon as any} size={22} color="#23262F" style={styles.menuIcon} />
-              <ThemedText style={styles.menuLabel}>{item.label}</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+              <Ionicons 
+                name={item.icon as any} 
+                size={22} 
+                color={isDark ? '#fff' : '#23262F'} 
+                style={styles.menuIcon} 
+              />
+              <ThemedText style={[styles.menuLabel, { color: isDark ? '#fff' : '#23262F' }]}>{item.label}</ThemedText>
+              <Ionicons name="chevron-forward" size={20} color={isDark ? '#A6A6A6' : '#C7C7CC'} />
             </TouchableOpacity>
           ))}
         </View>
@@ -97,22 +114,45 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 0,
+    paddingHorizontal: 24,
+    paddingTop: 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    position: 'relative',
+  },
+  headerTitleContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: -1,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    alignSelf: 'center',
-    marginVertical: 18,
-    color: '#23262F',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  headerRight: {
+    marginLeft: 'auto',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    elevation: 2,
   },
   avatarWrapper: {
     marginRight: 14,
@@ -130,11 +170,9 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#23262F',
   },
   userContact: {
     fontSize: 14,
-    color: '#A6A6A6',
     marginTop: 2,
   },
   logoutText: {
@@ -144,21 +182,15 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   menuList: {
-    marginTop: 18,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    backgroundColor: '#fff',
+    paddingHorizontal: 20
   },
   menuIcon: {
     marginRight: 18,
@@ -166,6 +198,5 @@ const styles = StyleSheet.create({
   menuLabel: {
     flex: 1,
     fontSize: 16,
-    color: '#23262F',
   },
 }); 

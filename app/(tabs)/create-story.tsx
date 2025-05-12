@@ -4,11 +4,10 @@ import { useAppDispatch, useAppSelector } from '@/hooks';
 import { RootState } from '@/store';
 import { createStory } from '@/store/slices/storySlice';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AGE_CATEGORIES = [
@@ -41,8 +40,6 @@ export default function CreateStoryScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'age' | 'theme'>('age');
 
@@ -145,181 +142,187 @@ export default function CreateStoryScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#181A20' : '#F6F7FB' }]}>
-      <ScrollView style={{ backgroundColor: isDark ? '#181A20' : '#F6F7FB' }}>
-        <ThemedView style={[styles.container, { backgroundColor: isDark ? '#181A20' : '#F6F7FB' }]}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#23262F'} />
-            </TouchableOpacity>
-            <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Create New Story</ThemedText>
-            <View style={styles.headerButton} />
-          </View>
+    <SafeAreaView style={[styles.safeArea]} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#23262F'} />
+          </TouchableOpacity>
+          <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Stwórz nową historię</ThemedText>
+          <View style={styles.headerButton} />
+        </View>
 
-          <View style={styles.form}>
-            <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
-              <TextInput
-                style={[styles.input, { color: isDark ? '#fff' : '#23262F' }]}
-                placeholder="Story Title"
-                placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
-                value={title}
-                onChangeText={setTitle}
-                editable={!loading}
-              />
-            </View>
+        <FlatList
+          data={[1]}
+          renderItem={() => (
+            <View style={styles.form}>
+              <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
+                <TextInput
+                  style={[styles.input, { color: isDark ? '#fff' : '#23262F' }]}
+                  placeholder="Tytuł historii"
+                  placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
+                  value={title}
+                  onChangeText={setTitle}
+                  editable={!loading}
+                />
+              </View>
 
-            <View style={styles.categorySection}>
-              <View style={styles.categoryHeader}>
-                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Categories</ThemedText>
-                <TouchableOpacity
-                  style={[styles.categoryButton, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}
-                  onPress={() => setShowCategoryModal(true)}
-                >
-                  {selectedCategories.length > 0 ? (
-                    <ThemedText style={[styles.categoryButtonText, { color: isDark ? '#A6A6A6' : '#666' }]}>
-                      {selectedCategories.length} Selected
-                    </ThemedText>
-                  ) : (
-                    <View style={styles.addCategoryButton}>
-                      <Ionicons name="add" size={20} color={isDark ? '#A6A6A6' : '#666'} />
+              <View style={styles.categorySection}>
+                <View style={styles.categoryHeader}>
+                  <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Kategorie</ThemedText>
+                  <TouchableOpacity
+                    style={[styles.categoryButton, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}
+                    onPress={() => setShowCategoryModal(true)}
+                  >
+                    {selectedCategories.length > 0 ? (
                       <ThemedText style={[styles.categoryButtonText, { color: isDark ? '#A6A6A6' : '#666' }]}>
-                        Add Categories
+                        {selectedCategories.length} wybranych
                       </ThemedText>
+                    ) : (
+                      <View style={styles.addCategoryButton}>
+                        <Ionicons name="add" size={20} color={isDark ? '#A6A6A6' : '#666'} />
+                        <ThemedText style={[styles.categoryButtonText, { color: isDark ? '#A6A6A6' : '#666' }]}>
+                          Dodaj kategorie
+                        </ThemedText>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoriesList}
+                >
+                  {selectedCategories.map(categoryId => {
+                    const category = [...AGE_CATEGORIES, ...THEME_CATEGORIES].find(cat => cat.id === categoryId);
+                    return category ? (
+                      <View key={categoryId} style={[styles.selectedCategory, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}>
+                        <ThemedText style={[styles.selectedCategoryText, { color: isDark ? '#A6A6A6' : '#666' }]}>
+                          {category.name}
+                        </ThemedText>
+                        <TouchableOpacity onPress={() => toggleCategory(categoryId)}>
+                          <Ionicons name="close" size={16} color={isDark ? '#A6A6A6' : '#666'} />
+                        </TouchableOpacity>
+                      </View>
+                    ) : null;
+                  })}
+                </ScrollView>
+              </View>
+
+              <View style={styles.coverImageSection}>
+                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Okładka</ThemedText>
+                <TouchableOpacity
+                  style={[styles.coverImageButton, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}
+                  onPress={handlePickImage}
+                  disabled={loading}
+                >
+                  {coverImage ? (
+                    <Image source={{ uri: coverImage }} style={styles.coverImage} />
+                  ) : (
+                    <View style={styles.coverImagePlaceholder}>
+                      <Ionicons name="image-outline" size={32} color={isDark ? '#A6A6A6' : '#666'} />
+                      <ThemedText style={[styles.coverImageText, { color: isDark ? '#A6A6A6' : '#666' }]}>Dodaj okładkę</ThemedText>
                     </View>
                   )}
                 </TouchableOpacity>
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoriesList}
-              >
-                {selectedCategories.map(categoryId => {
-                  const category = [...AGE_CATEGORIES, ...THEME_CATEGORIES].find(cat => cat.id === categoryId);
-                  return category ? (
-                    <View key={categoryId} style={[styles.selectedCategory, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}>
-                      <ThemedText style={[styles.selectedCategoryText, { color: isDark ? '#A6A6A6' : '#666' }]}>
-                        {category.name}
-                      </ThemedText>
-                      <TouchableOpacity onPress={() => toggleCategory(categoryId)}>
+
+              <View style={styles.contentSection}>
+                <View style={styles.contentHeader}>
+                  <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Treść historii</ThemedText>
+                  <TouchableOpacity
+                    style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+                    onPress={handleGenerateStory}
+                    disabled={isGenerating || loading}
+                  >
+                    <Ionicons name="sparkles-outline" size={20} color="#fff" />
+                    <ThemedText style={styles.generateButtonText}>
+                      {isGenerating ? 'Generuje...' : 'Generuj z AI'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
+                  <TextInput
+                    style={[styles.input, styles.contentInput, { color: isDark ? '#fff' : '#23262F' }]}
+                    placeholder="Napisz swoją historię tutaj..."
+                    placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
+                    value={content}
+                    onChangeText={setContent}
+                    multiline
+                    textAlignVertical="top"
+                    editable={!loading}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.tagSection}>
+                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Tagi</ThemedText>
+                <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
+                  <TextInput
+                    style={[styles.input, styles.tagInput, { color: isDark ? '#fff' : '#23262F' }]}
+                    placeholder="Dodaj tag"
+                    placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
+                    value={currentTag}
+                    onChangeText={setCurrentTag}
+                    onSubmitEditing={handleAddTag}
+                    editable={!loading}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[styles.addTagButton, !currentTag.trim() && styles.addTagButtonDisabled]}
+                  onPress={handleAddTag}
+                  disabled={!currentTag.trim() || loading}
+                >
+                  <Ionicons name="add" size={24} color="#fff" />
+                  <ThemedText style={styles.addTagButtonText}>Dodaj tag</ThemedText>
+                </TouchableOpacity>
+
+                <View style={styles.tags}>
+                  {tags.map(tag => (
+                    <View key={tag} style={[styles.tag, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}>
+                      <ThemedText style={[styles.tagText, { color: isDark ? '#A6A6A6' : '#666' }]}>{tag}</ThemedText>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveTag(tag)}
+                        disabled={loading}
+                      >
                         <Ionicons name="close" size={16} color={isDark ? '#A6A6A6' : '#666'} />
                       </TouchableOpacity>
                     </View>
-                  ) : null;
-                })}
-              </ScrollView>
-            </View>
+                  ))}
+                </View>
+              </View>
 
-            <View style={styles.coverImageSection}>
-              <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Cover Image</ThemedText>
-              <TouchableOpacity
-                style={[styles.coverImageButton, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}
-                onPress={handlePickImage}
-                disabled={loading}
-              >
-                {coverImage ? (
-                  <Image source={{ uri: coverImage }} style={styles.coverImage} />
-                ) : (
-                  <View style={styles.coverImagePlaceholder}>
-                    <Ionicons name="image-outline" size={32} color={isDark ? '#A6A6A6' : '#666'} />
-                    <ThemedText style={[styles.coverImageText, { color: isDark ? '#A6A6A6' : '#666' }]}>Add Cover Image</ThemedText>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.contentSection}>
-              <View style={styles.contentHeader}>
-                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Story Content</ThemedText>
+              <View style={styles.privacySection}>
+                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Prywatność</ThemedText>
                 <TouchableOpacity
-                  style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
-                  onPress={handleGenerateStory}
-                  disabled={isGenerating || loading}
+                  style={styles.privacyToggle}
+                  onPress={() => setIsPublic(!isPublic)}
+                  disabled={loading}
                 >
-                  <Ionicons name="sparkles-outline" size={20} color="#fff" />
-                  <ThemedText style={styles.generateButtonText}>
-                    {isGenerating ? 'Generating...' : 'Generate with AI'}
-                  </ThemedText>
+                  <View style={[styles.toggle, isPublic && styles.toggleActive]} />
+                  <ThemedText style={{ color: isDark ? '#fff' : '#23262F' }}>{isPublic ? 'Publiczna' : 'Prywatna'}</ThemedText>
                 </TouchableOpacity>
               </View>
-              <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
-                <TextInput
-                  style={[styles.input, styles.contentInput, { color: isDark ? '#fff' : '#23262F' }]}
-                  placeholder="Write your story here..."
-                  placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
-                  value={content}
-                  onChangeText={setContent}
-                  multiline
-                  textAlignVertical="top"
-                  editable={!loading}
-                />
-              </View>
-            </View>
 
-            <View style={styles.tagSection}>
-              <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Tags</ThemedText>
-              <View style={[styles.inputContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
-                <TextInput
-                  style={[styles.input, styles.tagInput, { color: isDark ? '#fff' : '#23262F' }]}
-                  placeholder="Add a tag"
-                  placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
-                  value={currentTag}
-                  onChangeText={setCurrentTag}
-                  onSubmitEditing={handleAddTag}
-                  editable={!loading}
-                />
-              </View>
               <TouchableOpacity
-                style={[styles.addTagButton, !currentTag.trim() && styles.addTagButtonDisabled]}
-                onPress={handleAddTag}
-                disabled={!currentTag.trim() || loading}
-              >
-                <Ionicons name="add" size={24} color="#fff" />
-                <ThemedText style={styles.addTagButtonText}>Add Tag</ThemedText>
-              </TouchableOpacity>
-
-              <View style={styles.tags}>
-                {tags.map(tag => (
-                  <View key={tag} style={[styles.tag, { backgroundColor: isDark ? '#23262F' : '#f0f0f0' }]}>
-                    <ThemedText style={[styles.tagText, { color: isDark ? '#A6A6A6' : '#666' }]}>{tag}</ThemedText>
-                    <TouchableOpacity
-                      onPress={() => handleRemoveTag(tag)}
-                      disabled={loading}
-                    >
-                      <Ionicons name="close" size={16} color={isDark ? '#A6A6A6' : '#666'} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.privacySection}>
-              <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Privacy</ThemedText>
-              <TouchableOpacity
-                style={styles.privacyToggle}
-                onPress={() => setIsPublic(!isPublic)}
+                style={[styles.createButton, loading && styles.createButtonDisabled]}
+                onPress={handleCreateStory}
                 disabled={loading}
               >
-                <View style={[styles.toggle, isPublic && styles.toggleActive]} />
-                <ThemedText style={{ color: isDark ? '#fff' : '#23262F' }}>{isPublic ? 'Public' : 'Private'}</ThemedText>
+                <ThemedText style={styles.createButtonText}>
+                  {loading ? 'Tworzenie...' : 'Stwórz historię'}
+                </ThemedText>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={[styles.createButton, loading && styles.createButtonDisabled]}
-              onPress={handleCreateStory}
-              disabled={loading}
-            >
-              <ThemedText style={styles.createButtonText}>
-                {loading ? 'Creating...' : 'Create Story'}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </ThemedView>
-      </ScrollView>
+          )}
+          keyExtractor={() => 'create-story-form'}
+          contentContainerStyle={styles.storyList}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
 
       <Modal
         visible={showCategoryModal}
@@ -331,7 +334,7 @@ export default function CreateStoryScreen() {
           <View style={[styles.modalContent, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
             <View style={styles.modalHeader}>
               <ThemedText style={[styles.modalTitle, { color: isDark ? '#fff' : '#23262F' }]}>
-                Select Categories
+                Wybierz kategorie
               </ThemedText>
               <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
                 <Ionicons name="close" size={24} color={isDark ? '#fff' : '#23262F'} />
@@ -344,7 +347,7 @@ export default function CreateStoryScreen() {
                 onPress={() => setActiveTab('age')}
               >
                 <ThemedText style={[styles.modalTabText, { color: isDark ? '#fff' : '#23262F' }]}>
-                  Age Groups
+                  Wiekowe grupy
                 </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -352,7 +355,7 @@ export default function CreateStoryScreen() {
                 onPress={() => setActiveTab('theme')}
               >
                 <ThemedText style={[styles.modalTabText, { color: isDark ? '#fff' : '#23262F' }]}>
-                  Themes
+                  Tematy
                 </ThemedText>
               </TouchableOpacity>
             </View>
@@ -385,7 +388,7 @@ export default function CreateStoryScreen() {
               style={styles.modalDoneButton}
               onPress={() => setShowCategoryModal(false)}
             >
-              <ThemedText style={styles.modalDoneButtonText}>Done</ThemedText>
+              <ThemedText style={styles.modalDoneButtonText}>Gotowe</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
@@ -396,11 +399,13 @@ export default function CreateStoryScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
+    backgroundColor: '#fff',
     flex: 1,
   },
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 0,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -410,7 +415,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 10,
+    position: 'relative',
   },
   headerButton: {
     width: 40,
@@ -421,21 +427,16 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   form: {
     gap: 20,
   },
   inputContainer: {
     borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   input: {
-    height: 50,
+    height: 48,
     paddingHorizontal: 15,
     fontSize: 16,
   },
@@ -445,11 +446,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 15,
   },
   categorySection: {
     gap: 10,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
   },
   categoriesList: {
     gap: 10,
@@ -458,7 +465,8 @@ const styles = StyleSheet.create({
   categoryButton: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 14,
+    backgroundColor: '#23262F',
   },
   categoryButtonText: {
     fontSize: 14,
@@ -469,13 +477,8 @@ const styles = StyleSheet.create({
   coverImageButton: {
     width: '100%',
     height: 200,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   coverImage: {
     width: '100%',
@@ -504,7 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e74c3c',
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 14,
     gap: 5,
   },
   generateButtonDisabled: {
@@ -513,7 +516,7 @@ const styles = StyleSheet.create({
   generateButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   tagSection: {
     gap: 10,
@@ -527,7 +530,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 10,
     gap: 8,
   },
@@ -574,16 +577,12 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: '#e74c3c',
-    height: 50,
-    borderRadius: 8,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 0,
+    marginBottom: 20,
   },
   createButtonDisabled: {
     opacity: 0.5,
@@ -591,7 +590,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -611,7 +610,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   modalTabs: {
     flexDirection: 'row',
@@ -622,7 +621,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 14,
   },
   activeModalTab: {
     backgroundColor: '#e74c3c',
@@ -640,7 +639,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 14,
     marginBottom: 10,
   },
   selectedModalItem: {
@@ -652,20 +651,15 @@ const styles = StyleSheet.create({
   modalDoneButton: {
     backgroundColor: '#e74c3c',
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 20,
   },
   modalDoneButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+    fontWeight: '600',
   },
   selectedCategory: {
     flexDirection: 'row',
@@ -682,5 +676,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+  },
+  storyList: {
+    gap: 20,
+    paddingHorizontal: 4,
   },
 }); 

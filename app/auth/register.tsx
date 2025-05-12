@@ -5,7 +5,7 @@ import { clearError, register } from '@/store/slices/authSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type PasswordStrength = 'weak' | 'medium' | 'strong';
@@ -71,14 +71,6 @@ export default function RegisterScreen() {
     });
   };
 
-  const getPasswordStrengthColor = (strength: PasswordStrength) => {
-    switch (strength) {
-      case 'strong': return '#4CAF50';
-      case 'medium': return '#FFC107';
-      case 'weak': return '#F44336';
-    }
-  };
-
   const handleRegister = async () => {
     if (!username || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -113,7 +105,7 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#181A20' : '#F6F7FB' }]}>
       {/* Decorative Top Shape */}
-      <View style={[styles.topShape, { backgroundColor: isDark ? '#23262F' : '#D1E3FF', width }]} />
+      <View style={[styles.topShape, { backgroundColor: isDark ? '#23262F' : '#f7c9c4', width }]} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.container}>
           <Animated.View 
@@ -124,17 +116,22 @@ export default function RegisterScreen() {
               }
             ]}
           >
-            {/* Logo Placeholder */}
-            <View style={styles.logoCircle} accessibilityLabel="App Logo" />
+           {/* Logo */}
+           <Image 
+              source={require('@/assets/images/party_1.png')}
+              style={styles.logo}
+              accessibilityLabel="App Logo"
+              resizeMode="contain"
+            />
             {/* Card */}
             <View style={[styles.card, { backgroundColor: isDark ? '#23262F' : '#fff', shadowColor: isDark ? '#000' : '#B0C4DE' }]}>
-              <ThemedText style={styles.heading}>Create Account</ThemedText>
-              <ThemedText style={styles.subheading}>Join StoryWhisper today</ThemedText>
+              <ThemedText style={styles.heading}>Utwórz konto</ThemedText>
+              <ThemedText style={styles.subheading}>Dołącz do MyStory dzisiaj!</ThemedText>
 
               <View style={styles.inputGroup}>
                 <TextInput
                   style={[styles.input, { backgroundColor: isDark ? '#23262F' : '#F6F7FB', color: isDark ? '#fff' : '#121212', borderColor: isDark ? '#353945' : '#E8E8E8' }]}
-                  placeholder="Username"
+                  placeholder="Nazwa użytkownika"
                   placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
                   value={username}
                   onChangeText={setUsername}
@@ -145,7 +142,7 @@ export default function RegisterScreen() {
 
                 <TextInput
                   style={[styles.input, { backgroundColor: isDark ? '#23262F' : '#F6F7FB', color: isDark ? '#fff' : '#121212', borderColor: isDark ? '#353945' : '#E8E8E8' }]}
-                  placeholder="Email"
+                  placeholder="Adres e-mail"
                   placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
                   value={email}
                   onChangeText={setEmail}
@@ -158,7 +155,7 @@ export default function RegisterScreen() {
                 <View>
                   <TextInput
                     style={[styles.input, { backgroundColor: isDark ? '#23262F' : '#F6F7FB', color: isDark ? '#fff' : '#121212', borderColor: isDark ? '#353945' : '#E8E8E8' }]}
-                    placeholder="Password"
+                    placeholder="Hasło"
                     placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
                     value={password}
                     onChangeText={setPassword}
@@ -170,7 +167,7 @@ export default function RegisterScreen() {
 
                 <TextInput
                   style={[styles.input, { backgroundColor: isDark ? '#23262F' : '#F6F7FB', color: isDark ? '#fff' : '#121212', borderColor: isDark ? '#353945' : '#E8E8E8' }]}
-                  placeholder="Confirm Password"
+                  placeholder="Powtórz hasło"
                   placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -190,7 +187,7 @@ export default function RegisterScreen() {
                   {ageVerified && <Ionicons name="checkmark" size={16} color="#fff" />}
                 </TouchableOpacity>
                 <ThemedText style={styles.checkboxText}>
-                  I confirm I am at least 13 years old
+                  Potwierdzam, że mam co najmniej 13 lat
                 </ThemedText>
               </View>
 
@@ -204,9 +201,9 @@ export default function RegisterScreen() {
                   {acceptTerms && <Ionicons name="checkmark" size={16} color="#fff" />}
                 </TouchableOpacity>
                 <ThemedText style={styles.checkboxText}>
-                  I accept the{' '}
-                  <ThemedText style={styles.link}>Terms of Service</ThemedText> and{' '}
-                  <ThemedText style={styles.link}>Privacy Policy</ThemedText>
+                  Akceptuję{' '}
+                  <ThemedText style={styles.link}>Warunki użytkowania</ThemedText> i{' '}
+                  <ThemedText style={styles.link}>Politykę prywatności</ThemedText>
                 </ThemedText>
               </View>
 
@@ -223,18 +220,18 @@ export default function RegisterScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <ThemedText style={styles.primaryBtnText}>Create Account</ThemedText>
+                  <ThemedText style={styles.primaryBtnText}>Utwórz konto</ThemedText>
                 )}
               </TouchableOpacity>
 
               <View style={styles.footerRow}>
-                <ThemedText style={styles.footerText}>Already have an account?</ThemedText>
+                <ThemedText style={styles.footerText}>Masz już konto?</ThemedText>
                 <TouchableOpacity
                   onPress={() => handleNavigation('/auth/login')}
                   disabled={loading}
                   accessibilityRole="button"
                 >
-                  <ThemedText style={styles.footerLink}>Sign In</ThemedText>
+                  <ThemedText style={styles.footerLink}>Zaloguj się</ThemedText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -283,6 +280,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
+  },
+  logo: {
+    width: 300,
+    height: 200,
+    marginBottom: 20,
+    alignSelf: 'center',
   },
   card: {
     width: '100%',
@@ -343,7 +346,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 12,
+    marginBottom: 0,
     marginTop: 12,
     width: '100%',
   },
@@ -361,7 +364,7 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     flex: 1,
-    fontSize: 14,
+    // fontSize: 14,
     color: '#777E90',
   },
   primaryBtn: {
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 28,
     marginBottom: 18,
   },
   primaryBtnDisabled: {

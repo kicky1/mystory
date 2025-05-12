@@ -5,20 +5,16 @@ import { RootState } from '@/store';
 import { fetchStories } from '@/store/slices/storySlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width: screenWidth } = Dimensions.get('window');
-
 const CATEGORIES = [
-  { id: 'all', name: 'All Stories' },
-  { id: 'fantasy', name: 'Fantasy' },
-  { id: 'mystery', name: 'Mystery' },
-  { id: 'adventure', name: 'Adventure' },
-  { id: 'science-fiction', name: 'Sci-Fi' },
-  { id: 'fairy-tale', name: 'Fairy Tales' },
-  { id: 'educational', name: 'Educational' },
+  { id: 'fantasy', name: 'Fantasy', image: require('@/assets/images/ninja.png') },
+  { id: 'adventure', name: 'Przygoda', image: require('@/assets/images/ninja.png') },
+  { id: 'science-fiction', name: 'Sci-Fi', image: require('@/assets/images/ninja.png') },
+  { id: 'fairy-tale', name: 'Bajki', image: require('@/assets/images/wizzard.png') },
+  { id: 'educational', name: 'Edukacyjne', image: require('@/assets/images/ninja.png') },
 ];
 
 export default function HomeScreen() {
@@ -28,10 +24,9 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showSearch, setShowSearch] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
-  const carouselRef = useRef(null);
-  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     dispatch(fetchStories());
@@ -98,39 +93,37 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  const handleCategorySelect = (categoryId: string) => {
+    if (selectedCategory === categoryId) {
+      // If clicking the same category, go back to categories view
+      setShowCategories(true);
+      setShowSearch(false);
+      setSelectedCategory('all');
+    } else {
+      // If selecting a new category, show search and stories
+      setSelectedCategory(categoryId);
+      setShowCategories(false);
+      setShowSearch(true);
+    }
+  };
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#181A20' : '#F6F7FB' }]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowSearch(!showSearch)}
-          >
-            <Ionicons name="search" size={24} color={isDark ? '#fff' : '#23262F'} />
-          </TouchableOpacity>
-          <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Home</ThemedText>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#23262F'} />
-          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Strona główna</ThemedText>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#23262F'} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Search Bar */}
-        {showSearch && (
-          <View style={[styles.searchContainer, { backgroundColor: isDark ? '#23262F' : '#fff' }]}>
-            <Ionicons name="search" size={20} color={isDark ? '#A6A6A6' : '#666'} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: isDark ? '#fff' : '#23262F' }]}
-              placeholder="Search stories..."
-              placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        )}
-
         <FlatList
-          data={filteredStories}
+          data={showCategories ? [] : filteredStories}
           renderItem={renderStoryItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.storyList}
@@ -138,15 +131,15 @@ export default function HomeScreen() {
           onRefresh={() => dispatch(fetchStories())}
           ListHeaderComponent={
             <>
-              {featuredStories.length > 0 && (
+              {showCategories && featuredStories.length > 0 && (
                 <View style={styles.featuredSection}>
-                  <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Top Stories of the Week</ThemedText>
+                  <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Top 20 tygodnia</ThemedText>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.featuredList}
                   >
-                    {featuredStories.map(story => (
+                    {featuredStories.map((story, index) => (
                       <TouchableOpacity
                         key={story.id}
                         style={styles.featuredStoryCard}
@@ -155,52 +148,88 @@ export default function HomeScreen() {
                           params: { id: story.id }
                         })}
                       >
-                        <Image
-                          source={{ uri: story.coverImage || 'https://via.placeholder.com/150x150' }}
-                          style={styles.featuredStoryImage}
-                        />
-                        <ThemedText style={[styles.featuredStoryTitle, { color: isDark ? '#fff' : '#23262F' }]} numberOfLines={1}>
-                          {story.title}
-                        </ThemedText>
-                        <ThemedText style={[styles.featuredStoryTheme, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
-                          {story.category}
-                        </ThemedText>
+                        <View style={styles.featuredStoryImageContainer}>
+                          <Image
+                            source={{ uri: story.coverImage || 'https://via.placeholder.com/150x150' }}
+                            style={styles.featuredStoryImage}
+                          />
+                          <View style={styles.featuredStoryNumber}>
+                            <ThemedText style={styles.featuredStoryNumberText}>{index + 1}</ThemedText>
+                          </View>
+                        </View>
+                        <View style={styles.featuredStoryInfo}>
+                          <ThemedText style={[styles.featuredStoryTitle, { color: isDark ? '#fff' : '#23262F' }]} numberOfLines={1}>
+                            {story.title}
+                          </ThemedText>
+                          <ThemedText style={[styles.featuredStoryAuthor, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
+                            {story.author}
+                          </ThemedText>
+                          <ThemedText style={[styles.featuredStoryTheme, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
+                            {story.category}
+                          </ThemedText>
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
                 </View>
               )}
 
-              <View style={styles.categoriesSection}>
-                <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Categories</ThemedText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoriesList}
-                >
-                  {CATEGORIES.map(category => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryButton,
-                        { backgroundColor: isDark ? '#23262F' : '#f0f0f0' },
-                        selectedCategory === category.id && { backgroundColor: '#e74c3c' }
-                      ]}
-                      onPress={() => setSelectedCategory(category.id)}
-                    >
-                      <ThemedText
+              {showCategories ? (
+                <View style={styles.categoriesSection}>
+                  <View style={styles.categoriesGrid}>
+                    {CATEGORIES.map(category => (
+                      <TouchableOpacity
+                        key={category.id}
                         style={[
-                          styles.categoryButtonText,
-                          { color: isDark ? '#A6A6A6' : '#666' },
-                          selectedCategory === category.id && { color: '#fff' }
+                          styles.categoryTile,
+                          { backgroundColor: isDark ? '#23262F' : '#fbe9e7' },
+                          selectedCategory === category.id && { backgroundColor: '#e74c3c' }
                         ]}
+                        onPress={() => handleCategorySelect(category.id)}
                       >
-                        {category.name}
-                      </ThemedText>
+                        <Image source={category.image} style={styles.categoryImage} />
+                        <ThemedText
+                          style={[
+                            styles.categoryTileText,
+                            { color: isDark ? '#A6A6A6' : '#000' },
+                            selectedCategory === category.id && { color: '#fff' }
+                          ]}
+                        >
+                          {category.name}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.categoriesSection}>
+                  <View style={styles.categoryHeader}>
+                    <TouchableOpacity 
+                      style={styles.backButton}
+                      onPress={() => {
+                        setShowCategories(true);
+                        setShowSearch(false);
+                        setSelectedCategory('all');
+                      }}
+                    >
+                      <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#23262F'} />
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+                    <ThemedText style={[styles.categoryTitle, { color: isDark ? '#fff' : '#23262F' }]}>
+                      {CATEGORIES.find(cat => cat.id === selectedCategory)?.name}
+                    </ThemedText>
+                  </View>
+                  <View style={[styles.searchContainer, { backgroundColor: isDark ? '#23262F' : '#fff', marginBottom: 2 }]}>
+                    <Ionicons name="search" size={20} color={isDark ? '#A6A6A6' : '#666'} style={styles.searchIcon} />
+                    <TextInput
+                      style={[styles.searchInput, { color: isDark ? '#fff' : '#23262F' }]}
+                      placeholder="Szukaj opowiadań..."
+                      placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                  </View>
+                </View>
+              )}
             </>
           }
         />
@@ -212,10 +241,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 0,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -225,7 +256,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 10,
+    position: 'relative',
+  },
+  headerTitleContainer: {
+    position: 'absolute',
+    
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: -1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  headerRight: {
+    marginLeft: 'auto',
   },
   headerButton: {
     width: 40,
@@ -234,10 +281,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,10 +288,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     height: 48,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
   },
   searchIcon: {
@@ -261,46 +300,20 @@ const styles = StyleSheet.create({
   },
   storyList: {
     gap: 15,
+    paddingBottom: 0,
+    marginBottom: 0,
+    paddingHorizontal: 4,
   },
   featuredSection: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 15,
   },
   carouselWrapper: {
     marginTop: 10,
-  },
-  featuredCard: {
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
-  },
-  featuredOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 15,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  featuredTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
   },
   featuredMeta: {
     flexDirection: 'row',
@@ -316,19 +329,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   categoriesSection: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
-  categoriesList: {
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  categoryTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
-    paddingRight: 20,
   },
-  categoryButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+  categoryTile: {
+    width: '48%',
+    aspectRatio: 1.3,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 15,
+    overflow: 'hidden',
   },
-  categoryButtonText: {
-    fontSize: 14,
+  categoryImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 2,
+    resizeMode: 'contain',
+  },
+  categoryTileText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   storyCard: {
     flexDirection: 'row',
@@ -404,26 +443,52 @@ const styles = StyleSheet.create({
   },
   featuredList: {
     gap: 15,
-    paddingRight: 20,
+    paddingRight: 24,
+    paddingLeft: 4,
   },
   featuredStoryCard: {
-    width: 120,
-    alignItems: 'center',
+    width: 140,
+  },
+  featuredStoryImageContainer: {
+    position: 'relative',
+    marginBottom: 12,
   },
   featuredStoryImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 8,
+    width: 140,
+    height: 140,
+    borderRadius: 16,
+  },
+  featuredStoryNumber: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#e74c3c',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featuredStoryNumberText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  featuredStoryInfo: {
+    paddingHorizontal: 4,
+    gap: 0,
   },
   featuredStoryTitle: {
     fontSize: 14,
+    lineHeight: 16,
     fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
+  },
+  featuredStoryAuthor: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   featuredStoryTheme: {
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 10,
+    lineHeight: 14,
   },
 }); 
