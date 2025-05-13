@@ -18,7 +18,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     // Only navigate if we have segments and the router is ready
     if (segments.length > 0) {
       if (!user && !token && !inAuthGroup) {
-        // Redirect to the login page if not authenticated
+        // Redirect to the auth page if not authenticated
         router.replace('/auth/login');
       } else if (user && token && inAuthGroup) {
         // Redirect to the home page if already authenticated

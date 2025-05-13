@@ -1,11 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { RootState } from '@/store';
 import { clearError, resetPassword, sendVerificationCode, verifyCode } from '@/store/slices/authSlice';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ForgotPasswordScreen() {
   const dispatch = useAppDispatch();
@@ -16,6 +16,21 @@ export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<'email' | 'code' | 'password'>('email');
   const [resendTimer, setResendTimer] = useState(0);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  const { width } = useWindowDimensions();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
+
+  // Animation values
+  const cardHeight = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Set initial card height
+    Animated.timing(cardHeight, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -129,170 +144,238 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title">Reset Password</ThemedText>
-        <ThemedText style={styles.subtitle}>
-          {step === 'email' && 'Enter your email to receive a verification code'}
-          {step === 'code' && 'Enter the verification code sent to your email'}
-          {step === 'password' && 'Create a new password'}
-        </ThemedText>
-      </View>
-
-      <View style={styles.form}>
-        {step === 'email' && (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              editable={!loading}
+    <SafeAreaView style={styles.safeArea}>
+      {/* Decorative Top Shape */}
+      <View style={[styles.topShape, { backgroundColor: isDark ? '#23262F' : '#fbe9e7', width }]} />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.container}>
+          <View style={styles.content}>
+            {/* Logo */}
+            <Image 
+              source={require('@/assets/images/party_1.png')}
+              style={styles.logo}
+              accessibilityLabel="App Logo"
+              resizeMode="contain"
             />
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleSendCode}
-              disabled={loading}
+            {/* Card */}
+            <Animated.View 
+              style={[
+                styles.card, 
+                { 
+                  transform: [{ scale: cardHeight }],
+                  opacity: cardHeight
+                }
+              ]}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <ThemedText style={styles.buttonText}>Send Code</ThemedText>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
+              <ThemedText style={styles.heading}>Zresetuj hasło</ThemedText>
+              <ThemedText style={styles.subheading}>
+                {step === 'email' && 'Wpisz swój email, aby otrzymać kod weryfikacyjny'}
+                {step === 'code' && 'Wpisz kod weryfikacyjny wysłany na email'}
+                {step === 'password' && 'Utwórz nowe hasło'}
+              </ThemedText>
 
-        {step === 'code' && (
-          <>
-            <View style={styles.codeInputContainer}>
-              <TextInput
-                style={styles.codeInput}
-                placeholder="Enter 6-digit code"
-                value={verificationCode}
-                onChangeText={text => {
-                  if (text.length <= 6) {
-                    setVerificationCode(text.replace(/[^0-9]/g, ''));
-                  }
-                }}
-                keyboardType="number-pad"
-                maxLength={6}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                style={[styles.resendButton, resendTimer > 0 && styles.resendButtonDisabled]}
-                onPress={handleResendCode}
-                disabled={resendTimer > 0 || loading}
-              >
-                <ThemedText style={styles.resendButtonText}>
-                  {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleVerifyCode}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <ThemedText style={styles.buttonText}>Verify Code</ThemedText>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
+              <View style={styles.inputGroup}>
+                {step === 'email' && (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Adres email"
+                    placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!loading}
+                  />
+                )}
 
-        {step === 'password' && (
-          <>
-            <View>
-              <TextInput
-                style={styles.input}
-                placeholder="New Password"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                editable={!loading}
-              />
-              <View style={styles.passwordStrengthContainer}>
-                <View style={[styles.passwordStrengthBar, { backgroundColor: getPasswordStrengthColor(passwordStrength) }]} />
-                <ThemedText style={[styles.passwordStrengthText, { color: getPasswordStrengthColor(passwordStrength) }]}>
-                  {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)} Password
-                </ThemedText>
+                {step === 'code' && (
+                  <View style={styles.codeInputContainer}>
+                    <TextInput
+                      style={styles.codeInput}
+                      placeholder="Wpisz 6-cyfrowy kod"
+                      placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
+                      value={verificationCode}
+                      onChangeText={text => {
+                        if (text.length <= 6) {
+                          setVerificationCode(text.replace(/[^0-9]/g, ''));
+                        }
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity
+                      style={[styles.resendButton, resendTimer > 0 && styles.resendButtonDisabled]}
+                      onPress={handleResendCode}
+                      disabled={resendTimer > 0 || loading}
+                    >
+                      <ThemedText style={styles.resendButtonText}>
+                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {step === 'password' && (
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Nowe hasło"
+                      placeholderTextColor={isDark ? '#A6A6A6' : '#A6A6A6'}
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      secureTextEntry
+                      editable={!loading}
+                    />
+                    <View style={styles.passwordStrengthContainer}>
+                      <View style={[styles.passwordStrengthBar, { backgroundColor: getPasswordStrengthColor(passwordStrength) }]} />
+                      <ThemedText style={[styles.passwordStrengthText, { color: getPasswordStrengthColor(passwordStrength) }]}>
+                        {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)} hasło
+                      </ThemedText>
+                    </View>
+                  </View>
+                )}
               </View>
-            </View>
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <ThemedText style={styles.buttonText}>Reset Password</ThemedText>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
 
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => {
-            if (step === 'code') setStep('email');
-            else if (step === 'password') setStep('code');
-            else router.push('/auth/login');
-          }}
-          disabled={loading}
-        >
-          <ThemedText style={styles.backButtonText}>Back</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </ThemedView>
+              <TouchableOpacity
+                style={[
+                  styles.primaryBtn,
+                  { backgroundColor: isDark ? '#e74c3c' : '#e74c3c' },
+                  loading && styles.primaryBtnDisabled
+                ]}
+                onPress={
+                  step === 'email' ? handleSendCode :
+                  step === 'code' ? handleVerifyCode :
+                  handleResetPassword
+                }
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ThemedText style={styles.primaryBtnText}>
+                    {step === 'email' ? 'Wyślij kod' :
+                     step === 'code' ? 'Weryfikuj kod' :
+                     'Zresetuj hasło'}
+                  </ThemedText>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => {
+                  if (step === 'code') setStep('email');
+                  else if (step === 'password') setStep('code');
+                  else router.push('/auth/login');
+                }}
+                disabled={loading}
+              >
+                <ThemedText style={styles.backButtonText}>Wróć</ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: 20,
-  },
-  header: {
-    marginTop: 60,
-    marginBottom: 40,
-    alignItems: 'center',
-  },
-  subtitle: {
-    marginTop: 10,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  form: {
-    gap: 15,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    fontSize: 16,
     backgroundColor: '#fff',
   },
+  flex: { flex: 1 },
+  topShape: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '20%',
+    borderBottomLeftRadius: 80,
+    borderBottomRightRadius: 80,
+    zIndex: 0,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    zIndex: 1,
+    paddingVertical: 0,
+  },
+  content: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: 1,
+  },
+  logo: {
+    width: 400,
+    height: 200,
+    marginTop: 0,
+    marginBottom: 10,
+    alignSelf: 'center',
+    resizeMode: 'contain',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 28,
+    padding: 24,
+    backgroundColor: '#fbe9e7',
+    alignItems: 'center',
+    marginBottom: 20,
+    overflow: 'hidden',
+    minHeight: 250,
+  },
+  heading: {
+    fontSize: 28,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#23262F',
+    textAlign: 'center',
+    paddingTop: 4,
+  },
+  subheading: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#777E90',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  inputGroup: {
+    width: '100%',
+    gap: 12,
+    marginBottom: 12,
+  },
+  input: {
+    width: '100%',
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 0,
+    backgroundColor: '#fff',
+    borderColor: '#fff',
+  },
   codeInputContainer: {
+    width: '100%',
     gap: 10,
   },
   codeInput: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    width: '100%',
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
     fontSize: 24,
     textAlign: 'center',
     letterSpacing: 8,
     backgroundColor: '#fff',
+    borderColor: '#fff',
   },
   resendButton: {
     alignSelf: 'center',
@@ -304,6 +387,7 @@ const styles = StyleSheet.create({
   resendButtonText: {
     color: '#e74c3c',
     fontSize: 14,
+    fontWeight: '600',
   },
   passwordStrengthContainer: {
     marginTop: 5,
@@ -317,21 +401,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  button: {
-    backgroundColor: '#e74c3c',
-    height: 50,
-    borderRadius: 8,
+  primaryBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 0,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  primaryBtnDisabled: {
+    opacity: 0.6,
   },
-  buttonText: {
+  primaryBtnText: {
     color: '#fff',
+    fontWeight: '700',
     fontSize: 16,
-    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   backButton: {
     marginTop: 20,
@@ -340,5 +425,6 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#e74c3c',
     fontSize: 16,
+    fontWeight: '600',
   },
 }); 

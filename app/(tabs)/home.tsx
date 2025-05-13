@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const CATEGORIES = [
   { id: 'fantasy', name: 'Fantasy', image: require('@/assets/images/ninja.png') },
   { id: 'adventure', name: 'Przygoda', image: require('@/assets/images/ninja.png') },
-  { id: 'science-fiction', name: 'Sci-Fi', image: require('@/assets/images/ninja.png') },
+  { id: 'science-fiction', name: 'Sci-Fi', image: require('@/assets/images/robot.png') },
   { id: 'fairy-tale', name: 'Bajki', image: require('@/assets/images/wizzard.png') },
   { id: 'educational', name: 'Edukacyjne', image: require('@/assets/images/ninja.png') },
 ];
@@ -113,11 +113,11 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTitleContainer}>
-            <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Strona główna</ThemedText>
+            <ThemedText style={[styles.headerTitle, { color: '#23262F' }]}>Strona główna</ThemedText>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.headerButton}>
-              <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#23262F'} />
+              <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
             </TouchableOpacity>
           </View>
         </View>
