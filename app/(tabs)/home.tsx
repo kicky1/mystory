@@ -1,20 +1,30 @@
+import adventure from '@/assets/images/adventure.png';
+import animals from '@/assets/images/animals.png';
+import dinosaurs from '@/assets/images/disonaurs.png';
+import magic from '@/assets/images/magic.png';
+import princess from '@/assets/images/princess.png';
+import scienceFiction from '@/assets/images/sci-fi.png';
+import sports from '@/assets/images/sports.png';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { RootState } from '@/store';
 import { fetchStories } from '@/store/slices/storySlice';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, ImageBackground, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CATEGORIES = [
-  { id: 'fantasy', name: 'Fantasy', image: require('@/assets/images/ninja.png') },
-  { id: 'adventure', name: 'Przygoda', image: require('@/assets/images/ninja.png') },
-  { id: 'science-fiction', name: 'Sci-Fi', image: require('@/assets/images/robot.png') },
-  { id: 'fairy-tale', name: 'Bajki', image: require('@/assets/images/wizzard.png') },
-  { id: 'educational', name: 'Edukacyjne', image: require('@/assets/images/ninja.png') },
+  { id: 'magic', name: 'Magia', image: magic},
+  { id: 'adventure', name: 'Przygoda', image: adventure},
+  { id: 'animals', name: 'Zwierzęta', image: animals},
+  { id: 'science-fiction', name: 'Sci-Fi', image: scienceFiction},
+  { id: 'princess', name: 'Księżniczki', image: princess },
+  { id: 'dinosaurs', name: 'Dinozaury', image: dinosaurs},
+  { id: 'sports', name: 'Sport', image: sports},
 ];
 
 export default function HomeScreen() {
@@ -183,20 +193,25 @@ export default function HomeScreen() {
                         style={[
                           styles.categoryTile,
                           { backgroundColor: isDark ? '#23262F' : '#fbe9e7' },
-                          selectedCategory === category.id && { backgroundColor: '#e74c3c' }
                         ]}
                         onPress={() => handleCategorySelect(category.id)}
                       >
-                        <Image source={category.image} style={styles.categoryImage} />
-                        <ThemedText
-                          style={[
-                            styles.categoryTileText,
-                            { color: isDark ? '#A6A6A6' : '#000' },
-                            selectedCategory === category.id && { color: '#fff' }
-                          ]}
+                        <ImageBackground
+                          source={category.image}
+                          resizeMode="cover"
+                          style={styles.categoryImage}
                         >
-                          {category.name}
-                        </ThemedText>
+                          <BlurView
+                            intensity={20}
+                            tint="light"
+                            style={styles.categoryOverlay}
+                          />
+                          <View style={styles.categoryContent}>
+                            <ThemedText style={[styles.categoryTileText, { color: '#fff', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 }]}>
+                              {category.name}
+                            </ThemedText>
+                          </View>
+                        </ImageBackground>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -247,6 +262,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 0,
+    
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -329,7 +345,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   categoriesSection: {
-    marginBottom: 0,
+    marginBottom: 10,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -351,22 +367,36 @@ const styles = StyleSheet.create({
   },
   categoryTile: {
     width: '48%',
-    aspectRatio: 1.3,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 15,
     overflow: 'hidden',
   },
   categoryImage: {
-    width: 100,
-    height: 100,
+    width: '100%',
+    height: 160,
     marginBottom: 2,
     resizeMode: 'contain',
   },
+  categoryOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '25%',
+  },
+  categoryContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '25%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   categoryTileText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
   },
   storyCard: {
