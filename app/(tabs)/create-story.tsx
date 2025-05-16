@@ -1,3 +1,4 @@
+import { Notifications } from '@/components/Notifications';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -7,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Image, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AGE_CATEGORIES = [
@@ -31,6 +32,10 @@ export default function CreateStoryScreen() {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
+  const { unreadCount } = useAppSelector((state: RootState) => state.notifications);
+  const [showNotifications, setShowNotifications] = useState(false);
+  // Animation value for the notification badge
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -59,6 +64,28 @@ export default function CreateStoryScreen() {
       Alert.alert('Error', error);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (unreadCount > 0) {
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [unreadCount]);
 
   const handleAddTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -180,7 +207,22 @@ export default function CreateStoryScreen() {
             <Ionicons name="arrow-back" size={24} color="#23262F" />
           </TouchableOpacity>
           <ThemedText style={[styles.headerTitle, { color: '#23262F' }]}>Stwórz nową historię</ThemedText>
-          <View style={styles.headerButton} />
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => setShowNotifications(true)}
+          >
+            <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
+            {unreadCount > 0 && (
+                  <Animated.View
+                    style={[
+                      styles.notificationBadge,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  />
+                )}
+          </TouchableOpacity>
         </View>
         
 
@@ -562,6 +604,10 @@ export default function CreateStoryScreen() {
           </View>
         </View>
       </Modal>
+      <Notifications 
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -895,5 +941,19 @@ const styles = StyleSheet.create({
   },
   storyLengthButtonTextActive: {
     color: '#fff',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#e74c3c',
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 }); 

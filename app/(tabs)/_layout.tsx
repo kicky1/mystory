@@ -5,17 +5,17 @@ import { Tabs } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function TabLayout() {
-  const { theme } = useTheme();
-  const backgroundColor = useThemeColor({}, 'background');
-  const tintColor = useThemeColor({}, 'tint');
+  // const { theme } = useTheme();
+  // const backgroundColor = useThemeColor({}, 'background');
+  // const tintColor = useThemeColor({}, 'tint');
 
-  if (!theme || !backgroundColor || !tintColor) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="#e74c3c" />
-      </View>
-    );
-  }
+  // if (!theme || !backgroundColor || !tintColor) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+  //       <ActivityIndicator size="large" color="#e74c3c" />
+  //     </View>
+  //   );
+  // }
 
   return (
     <Tabs

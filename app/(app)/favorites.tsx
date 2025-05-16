@@ -1,15 +1,42 @@
+import { Notifications } from '@/components/Notifications';
 import { ThemedText } from '@/components/ThemedText';
 import { useAppSelector } from '@/hooks';
 import { RootState } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Animated, FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FavoritesScreen() {
   const { stories } = useAppSelector((state: RootState) => state.stories);
   const { user } = useAppSelector((state: RootState) => state.auth);
+  const { unreadCount } = useAppSelector((state: RootState) => state.notifications);
+  const [showNotifications, setShowNotifications] = useState(false);
+  // Animation value for the notification badge
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (unreadCount > 0) {
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [unreadCount]);
 
   // In a real app, this would come from the user's favorites in the backend
   const favoriteStories = stories.filter(story => story.featured);
@@ -60,7 +87,22 @@ export default function FavoritesScreen() {
             <Ionicons name="arrow-back" size={24} color="#23262F" />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>Favorites</ThemedText>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => setShowNotifications(true)}
+          >
+            <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
+            {unreadCount > 0 && (
+                  <Animated.View
+                    style={[
+                      styles.notificationBadge,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  />
+                )}
+          </TouchableOpacity>
         </View>
 
         <FlatList
@@ -85,6 +127,10 @@ export default function FavoritesScreen() {
           }
         />
       </View>
+      <Notifications 
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -180,6 +226,23 @@ const styles = StyleSheet.create({
   exploreButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  headerButton: {
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#e74c3c',
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
   },
 }); 

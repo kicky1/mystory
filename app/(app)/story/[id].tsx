@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   Image,
   ScrollView,
   Share,
@@ -24,9 +23,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
-
-export default function StoryDetailScreen() {
+export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { stories, loading } = useAppSelector((state: RootState) => state.stories);
@@ -38,11 +35,6 @@ export default function StoryDetailScreen() {
   
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
 
   // Audio state
   const [sound, setSound] = useState<Audio.Sound | null>(null);

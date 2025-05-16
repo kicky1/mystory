@@ -5,6 +5,8 @@ import magic from '@/assets/images/magic.png';
 import princess from '@/assets/images/princess.png';
 import scienceFiction from '@/assets/images/sci-fi.png';
 import sports from '@/assets/images/sports.png';
+import { Notifications } from '@/components/Notifications';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAppDispatch, useAppSelector } from '@/hooks';
@@ -13,11 +15,12 @@ import { fetchStories } from '@/store/slices/storySlice';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
+import { navigate } from 'expo-router/build/global-state/routing';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, ImageBackground, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Image, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { id: 'magic', name: 'Magia', image: magic},
   { id: 'adventure', name: 'Przygoda', image: adventure},
   { id: 'animals', name: 'Zwierzęta', image: animals},
@@ -30,13 +33,18 @@ const CATEGORIES = [
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
   const { stories, loading, error } = useAppSelector((state: RootState) => state.stories);
+  const { unreadCount } = useAppSelector((state: RootState) => state.notifications);
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showSearch, setShowSearch] = useState(false);
   const [showCategories, setShowCategories] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
+
+  // Animation value for the notification badge
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     dispatch(fetchStories());
@@ -47,6 +55,28 @@ export default function HomeScreen() {
       Alert.alert('Error', error);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (unreadCount > 0) {
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [unreadCount]);
 
   const featuredStories = stories?.filter(story => story.featured) || [];
   const filteredStories = stories?.filter(story => {
@@ -104,152 +134,132 @@ export default function HomeScreen() {
   );
 
   const handleCategorySelect = (categoryId: string) => {
-    if (selectedCategory === categoryId) {
-      // If clicking the same category, go back to categories view
-      setShowCategories(true);
-      setShowSearch(false);
-      setSelectedCategory('all');
-    } else {
-      // If selecting a new category, show search and stories
-      setSelectedCategory(categoryId);
-      setShowCategories(false);
-      setShowSearch(true);
-    }
+    navigate(`/category/${categoryId}`);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleContainer}>
-            <ThemedText style={[styles.headerTitle, { color: '#23262F' }]}>Strona główna</ThemedText>
+    <ProtectedRoute>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerTitleContainer}>
+              <ThemedText style={[styles.headerTitle, { color: '#23262F' }]}>Strona główna</ThemedText>
+            </View>
+            <View style={styles.headerRight}>
+              <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => setShowNotifications(true)}
+              >
+                <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
+                {unreadCount > 0 && (
+                  <Animated.View
+                    style={[
+                      styles.notificationBadge,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerButton}>
-              <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        <FlatList
-          data={showCategories ? [] : filteredStories}
-          renderItem={renderStoryItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.storyList}
-          refreshing={loading}
-          onRefresh={() => dispatch(fetchStories())}
-          ListHeaderComponent={
-            <>
-              {showCategories && featuredStories.length > 0 && (
-                <View style={styles.featuredSection}>
-                  <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Top 20 tygodnia</ThemedText>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.featuredList}
-                  >
-                    {featuredStories.map((story, index) => (
-                      <TouchableOpacity
-                        key={story.id}
-                        style={styles.featuredStoryCard}
-                        onPress={() => router.push({
-                          pathname: '/story/[id]',
-                          params: { id: story.id }
-                        })}
-                      >
-                        <View style={styles.featuredStoryImageContainer}>
-                          <Image
-                            source={{ uri: story.coverImage || 'https://via.placeholder.com/150x150' }}
-                            style={styles.featuredStoryImage}
-                          />
-                          <View style={styles.featuredStoryNumber}>
-                            <ThemedText style={styles.featuredStoryNumberText}>{index + 1}</ThemedText>
-                          </View>
-                        </View>
-                        <View style={styles.featuredStoryInfo}>
-                          <ThemedText style={[styles.featuredStoryTitle, { color: isDark ? '#fff' : '#23262F' }]} numberOfLines={1}>
-                            {story.title}
-                          </ThemedText>
-                          <ThemedText style={[styles.featuredStoryAuthor, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
-                            {story.author}
-                          </ThemedText>
-                          <ThemedText style={[styles.featuredStoryTheme, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
-                            {story.category}
-                          </ThemedText>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {showCategories ? (
-                <View style={styles.categoriesSection}>
-                  <View style={styles.categoriesGrid}>
-                    {CATEGORIES.map(category => (
-                      <TouchableOpacity
-                        key={category.id}
-                        style={[
-                          styles.categoryTile,
-                          { backgroundColor: isDark ? '#23262F' : '#fbe9e7' },
-                        ]}
-                        onPress={() => handleCategorySelect(category.id)}
-                      >
-                        <ImageBackground
-                          source={category.image}
-                          resizeMode="cover"
-                          style={styles.categoryImage}
+          <FlatList
+            data={showCategories ? [] : filteredStories}
+            renderItem={renderStoryItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.storyList}
+            refreshing={loading}
+            onRefresh={() => dispatch(fetchStories())}
+            ListHeaderComponent={
+              <>
+                {showCategories && featuredStories.length > 0 && (
+                  <View style={styles.featuredSection}>
+                    <ThemedText style={[styles.sectionTitle, { color: isDark ? '#fff' : '#23262F' }]}>Top 20 tygodnia</ThemedText>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.featuredList}
+                    >
+                      {featuredStories.map((story, index) => (
+                        <TouchableOpacity
+                          key={story.id}
+                          style={styles.featuredStoryCard}
+                          onPress={() => router.push({
+                            pathname: '/story/[id]',
+                            params: { id: story.id }
+                          })}
                         >
-                          <BlurView
-                            intensity={20}
-                            tint="light"
-                            style={styles.categoryOverlay}
-                          />
-                          <View style={styles.categoryContent}>
-                            <ThemedText style={[styles.categoryTileText, { color: '#fff', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 }]}>
-                              {category.name}
+                          <View style={styles.featuredStoryImageContainer}>
+                            <Image
+                              source={{ uri: story.coverImage || 'https://via.placeholder.com/150x150' }}
+                              style={styles.featuredStoryImage}
+                            />
+                            <View style={styles.featuredStoryNumber}>
+                              <ThemedText style={styles.featuredStoryNumberText}>{index + 1}</ThemedText>
+                            </View>
+                          </View>
+                          <View style={styles.featuredStoryInfo}>
+                            <ThemedText style={[styles.featuredStoryTitle, { color: isDark ? '#fff' : '#23262F' }]} numberOfLines={1}>
+                              {story.title}
+                            </ThemedText>
+                            <ThemedText style={[styles.featuredStoryAuthor, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
+                              {story.author}
+                            </ThemedText>
+                            <ThemedText style={[styles.featuredStoryTheme, { color: isDark ? '#A6A6A6' : '#666' }]} numberOfLines={1}>
+                              {story.category}
                             </ThemedText>
                           </View>
-                        </ImageBackground>
-                      </TouchableOpacity>
-                    ))}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
-                </View>
-              ) : (
-                <View style={styles.categoriesSection}>
-                  <View style={styles.categoryHeader}>
-                    <TouchableOpacity 
-                      style={styles.backButton}
-                      onPress={() => {
-                        setShowCategories(true);
-                        setShowSearch(false);
-                        setSelectedCategory('all');
-                      }}
-                    >
-                      <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#23262F'} />
-                    </TouchableOpacity>
-                    <ThemedText style={[styles.categoryTitle, { color: isDark ? '#fff' : '#23262F' }]}>
-                      {CATEGORIES.find(cat => cat.id === selectedCategory)?.name}
-                    </ThemedText>
+                )}
+
+               
+                  <View style={styles.categoriesSection}>
+                    <View style={styles.categoriesGrid}>
+                      {CATEGORIES.map(category => (
+                        <TouchableOpacity
+                          key={category.id}
+                          style={[
+                            styles.categoryTile,
+                            { backgroundColor: isDark ? '#23262F' : '#fbe9e7' },
+                          ]}
+                          onPress={() => handleCategorySelect(category.id)}
+                        >
+                          <ImageBackground
+                            source={category.image}
+                            resizeMode="cover"
+                            style={styles.categoryImage}
+                          >
+                            <BlurView
+                              intensity={20}
+                              tint="light"
+                              style={styles.categoryOverlay}
+                            />
+                            <View style={styles.categoryContent}>
+                              <ThemedText style={[styles.categoryTileText, { color: '#fff', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 }]}>
+                                {category.name}
+                              </ThemedText>
+                            </View>
+                          </ImageBackground>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   </View>
-                  <View style={[styles.searchContainer, { backgroundColor: isDark ? '#23262F' : '#fff', marginBottom: 2 }]}>
-                    <Ionicons name="search" size={20} color={isDark ? '#A6A6A6' : '#666'} style={styles.searchIcon} />
-                    <TextInput
-                      style={[styles.searchInput, { color: isDark ? '#fff' : '#23262F' }]}
-                      placeholder="Szukaj opowiadań..."
-                      placeholderTextColor={isDark ? '#A6A6A6' : '#666'}
-                      value={searchQuery}
-                      onChangeText={setSearchQuery}
-                    />
-                  </View>
-                </View>
-              )}
-            </>
-          }
-        />
-      </View>
-    </SafeAreaView>
+              </>
+            }
+          />
+        </View>
+      </SafeAreaView>
+      <Notifications 
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
+    </ProtectedRoute>
   );
 }
 
@@ -520,5 +530,17 @@ const styles = StyleSheet.create({
   featuredStoryTheme: {
     fontSize: 10,
     lineHeight: 14,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#e74c3c',
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+  },
+  notificationBadgeText: {
+    display: 'none',
   },
 }); 

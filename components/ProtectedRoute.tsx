@@ -13,17 +13,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     if (loading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabsGroup = segments[0] === '(tabs)';
 
-    // Only navigate if we have segments and the router is ready
-    if (segments.length > 0) {
-      if (!user && !token && !inAuthGroup) {
-        // Redirect to the auth page if not authenticated
-        router.replace('/auth/login');
-      } else if (user && token && inAuthGroup) {
-        // Redirect to the home page if already authenticated
-        router.replace('/(tabs)/home');
-      }
+    if (!user && !token && !inAuthGroup) {
+      router.replace('/auth/login');
+    } else if (user && token && inAuthGroup) {
+      router.replace('/(tabs)/home');
     }
   }, [user, token, segments, loading]);
 
@@ -36,4 +30,4 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
-} 
+}

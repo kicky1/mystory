@@ -1,11 +1,12 @@
+import { Notifications } from '@/components/Notifications';
 import { ThemedText } from '@/components/ThemedText';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { RootState } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
-import { Alert, Image, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Animated, Image, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MENU_ITEMS = [
@@ -24,8 +25,35 @@ const MENU_ITEMS = [
 export default function ProfileScreen() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
+  const { unreadCount } = useAppSelector((state: RootState) => state.notifications);
+  const [showNotifications, setShowNotifications] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark' ? false : true; // Force light mode by default
+
+  // Animation value for the notification badge
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (unreadCount > 0) {
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [unreadCount]);
 
   function handleLogout() {
     Alert.alert(
@@ -54,8 +82,21 @@ export default function ProfileScreen() {
             <ThemedText style={[styles.headerTitle, { color: isDark ? '#fff' : '#23262F' }]}>Profil użytkownika</ThemedText>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerButton}>
-              <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#23262F'} />
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => setShowNotifications(true)}
+            >
+              <Ionicons name="notifications-outline" size={24} color={'#e74c3c'} />
+              {unreadCount > 0 && (
+                  <Animated.View
+                    style={[
+                      styles.notificationBadge,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  />
+                )}
             </TouchableOpacity>
           </View>
         </View>
@@ -103,6 +144,10 @@ export default function ProfileScreen() {
           ))}
         </View>
       </View>
+      <Notifications 
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -198,5 +243,19 @@ const styles = StyleSheet.create({
   menuLabel: {
     flex: 1,
     fontSize: 16,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#e74c3c',
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 }); 
